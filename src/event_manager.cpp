@@ -14,4 +14,6 @@
 
 #include "junctions/event_manager.h"
 
-namespace ju {}  // namespace ju
+namespace ju {
+
+}  // namespace ju

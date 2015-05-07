@@ -3,6 +3,10 @@ project("junctions")
 
 include("cmake/nucleus.cmake")
 
+if(NUCLEUS_BUILD_UNITTESTS)
+  option("JUNCTIONS_BUILD_UNITTESTS" "Enable unit testing for this library.")
+endif()
+
 set("junctions_INCLUDE_FILES"
   "include/junctions/event_manager.h"
 )
@@ -15,7 +19,7 @@ add_library("junctions" ${junctions_INCLUDE_FILES} ${junctions_SOURCE_FILES})
 target_include_directories("junctions" PUBLIC "${junctions_SOURCE_DIR}/include")
 target_link_libraries("junctions" "nucleus")
 
-if(NUCLEUS_UNIT_TESTS)
+if(JUNCTIONS_BUILD_UNITTESTS)
   set("junctions_TEST_FILES"
     "tests/event_manager_tests.cpp"
   )
