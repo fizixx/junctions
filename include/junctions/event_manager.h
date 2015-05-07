@@ -69,8 +69,8 @@ public:
   void subscribe(ReceiverType* receiver) {
     // Get the pointer to the receive function that will be called when we emit
     // a signal of this type.
-    void (ReceiverType::*receiveFunc)(const EventType&) =
-        &ReceiverType::receive;
+    using Signature = void (ReceiverType::*)(const EventType&);
+    Signature receiveFunc = &ReceiverType::receive;
 
     // Get the signal for this event type.
     SignalType* signal = getSignalFor<EventType>();

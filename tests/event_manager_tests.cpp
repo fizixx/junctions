@@ -34,12 +34,15 @@ class IReceiveEvents {
 public:
   IReceiveEvents() = default;
 
+  int total{0};
+  std::string finalString;
+
   void receive(const SomeEvent& event) {
-    LOG(Info) << event.count;
+    total += event.count;
   }
 
   void receive(const AnotherEvent& event) {
-    LOG(Info) << event.word;
+    finalString.append(event.word);
   }
 };
 
@@ -49,11 +52,15 @@ TEST(EventManagerTest, Basic) {
   IReceiveEvents ire;
 
   em.subscribe<SomeEvent>(&ire);
-  em.subscribe<SomeEvent>(&ire);
   em.subscribe<AnotherEvent>(&ire);
 
   em.emit<SomeEvent>(10);
-  em.emit<AnotherEvent>("Another event");
+  em.emit<AnotherEvent>("event");
+  em.emit<SomeEvent>(20);
+  em.emit<AnotherEvent>("Another");
+
+  EXPECT_EQ(30, ire.total);
+  EXPECT_EQ(std::string{"eventAnother"}, ire.finalString);
 }
 
 }  // namespace ju
