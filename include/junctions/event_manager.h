@@ -22,15 +22,11 @@
 #include <nucleus/macros.h>
 #include <nucleus/utils/signals.h>
 
+#include "junctions/utils.h"
+
 namespace ju {
 
 namespace detail {
-
-template <typename EventType>
-// EventType: The type of the event we want an ID for.
-struct EventLookup {
-  static size_t getId() { return reinterpret_cast<size_t>(&getId); }
-};
 
 template <typename EventType>
 // EventType: The type of the event we are wrapping up.
@@ -104,7 +100,7 @@ private:
   template <typename EventType>
   // EventType: The type of the event we want the signal for.
   SignalType* getSignalFor() {
-    size_t eventId = detail::EventLookup<EventType>::getId();
+    size_t eventId = IdForType<EventType>::getId();
 
     // Find the signal in the map.
     auto it = m_signals.find(eventId);
