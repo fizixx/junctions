@@ -26,7 +26,9 @@ struct MoveComponent {
   MoveComponent(int x, int y) : x(x), y(y) {}
 };
 
-struct AnotherComponent {};
+struct AnotherComponent {
+  int someValue{10};
+};
 
 TEST(EntityManagerTest, Basic) {
   EntityManager em;
@@ -41,6 +43,29 @@ TEST(EntityManagerTest, Basic) {
 
   auto anotherComp = entity1->getComponent<AnotherComponent>();
   EXPECT_TRUE(anotherComp == nullptr);
+}
+
+TEST(EntityManagerTest, Iteration) {
+  EntityManager em;
+
+  Entity* e1 = em.createEntity();
+  e1->addComponent<MoveComponent>(10, 20);
+  e1->addComponent<AnotherComponent>();
+
+  Entity* e2 = em.createEntity();
+  e2->addComponent<MoveComponent>(20, 30);
+
+  for (auto& entity : em) {
+    MoveComponent* moveComp = entity.getComponent<MoveComponent>();
+    if (moveComp) {
+      LOG(Info) << "moveComp: " << moveComp->x << ", " << moveComp->y;
+    }
+
+    AnotherComponent* anotherComp = entity.getComponent<AnotherComponent>();
+    if (anotherComp) {
+      LOG(Info) << "anotherComp: " << anotherComp->someValue;
+    }
+  }
 }
 
 }  // namespace ju
