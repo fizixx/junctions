@@ -1,7 +1,16 @@
 cmake_minimum_required(VERSION 3.0)
 project("junctions")
 
-include("cmake/nucleus.cmake")
+# General options
+
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
+# Dependencies
+
+option(JUNCTIONS_BUILD_DEPENDENCIES "Build all dependencies with this library")
+if(JUNCTIONS_BUILD_DEPENDENCIES)
+  include("cmake/nucleus.cmake")
+endif()
 
 if(NUCLEUS_BUILD_UNITTESTS)
   option("JUNCTIONS_BUILD_UNITTESTS" "Enable unit testing for this library.")
@@ -23,6 +32,7 @@ set("junctions_SOURCE_FILES"
 add_library("junctions" ${junctions_INCLUDE_FILES} ${junctions_SOURCE_FILES})
 target_include_directories("junctions" PUBLIC "${junctions_SOURCE_DIR}/include")
 target_link_libraries("junctions" "nucleus")
+set_property(TARGET "junctions" PROPERTY FOLDER "junctions")
 
 if(JUNCTIONS_BUILD_UNITTESTS)
   set("junctions_TEST_FILES"
@@ -32,4 +42,5 @@ if(JUNCTIONS_BUILD_UNITTESTS)
 
   add_executable("junctions_tests" ${junctions_TEST_FILES})
   target_link_libraries("junctions_tests" "gtest_main" "gtest" "junctions")
+  set_property(TARGET "junctions_tests" PROPERTY FOLDER "junctions")
 endif()
