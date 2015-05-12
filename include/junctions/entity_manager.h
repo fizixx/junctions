@@ -26,6 +26,8 @@
 
 namespace ju {
 
+class EventManager;
+
 class EntityManager {
 public:
   // Iterator we use to traverse all the entities in the manager.
@@ -92,7 +94,8 @@ public:
     Entity::ComponentMask m_mask;
   };
 
-  EntityManager() = default;
+  explicit EntityManager(EventManager* eventManager)
+    : m_eventManager(eventManager) {}
   ~EntityManager() = default;
 
   // Add a new entity to this manager and return the newly created entity.
@@ -120,10 +123,13 @@ public:
 private:
   friend class Iterator;
 
+  // The event manager we use to send events.
+  EventManager* m_eventManager;
+
   // All the entities that we own.
   std::vector<Entity> m_entities;
 
-  DISALLOW_COPY_AND_ASSIGN(EntityManager);
+  DISALLOW_IMPLICIT_CONSTRUCTORS(EntityManager);
 };
 
 }  // namespace ju
