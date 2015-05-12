@@ -31,14 +31,20 @@ class EventManager;
 class EntityManager {
 public:
   // Iterator we use to traverse all the entities in the manager.
-  class Iterator : public std::iterator<std::input_iterator_tag, Entity*> {
+  class Iterator : public std::iterator<std::input_iterator_tag, Entity> {
   public:
     // Construct an Iterator with the specified manager and index.
     Iterator(EntityManager* manager, size_t index,
              const Entity::ComponentMask& mask)
-      : m_manager(manager), m_index(index), m_mask(mask) {
+      : m_manager(manager), m_index(index),
+        m_maxSize(m_manager->m_entities.size()), m_mask(mask) {
       next();
     }
+
+    // Construct an end Iterator.
+    Iterator(EntityManager* manager)
+      : m_manager(manager), m_index(m_manager->m_entities.size()),
+        m_maxSize(m_index) {}
 
     Iterator& operator++() {
       ++m_index;
@@ -47,9 +53,13 @@ public:
     }
 
     bool operator==(const Iterator& other) const {
+      DCHECK(m_manager == other.m_manager)
+          << "Can't compare iterators from different managers.";
       return m_index == other.m_index;
     }
     bool operator!=(const Iterator& other) const {
+      DCHECK(m_manager == other.m_manager)
+          << "Can't compare iterators from different managers.";
       return m_index != other.m_index;
     }
     Entity& operator*() { return m_manager->m_entities[m_index]; }
@@ -58,8 +68,10 @@ public:
   private:
     // Move the index to the next entity that matches our mask.
     void next() {
-      while (!m_manager->m_entities[m_index].hasComponents(m_mask) &&
-             m_index != m_manager->m_entities.size()) {
+      while (m_index != m_maxSize) {
+        if (m_manager->m_entities[m_index].hasComponents(m_mask)) {
+          break;
+        }
         ++m_index;
       }
     }
@@ -69,6 +81,9 @@ public:
 
     // The current index into the list of entiries.
     size_t m_index;
+
+    // The total capacity of the list we are iterating over.
+    size_t m_maxSize;
 
     // The mask we are filtering on.
     Entity::ComponentMask m_mask;
@@ -81,7 +96,7 @@ public:
     ~EntitiesView() = default;
 
     Iterator begin() { return Iterator(m_entityManager, 0, m_mask); }
-    Iterator end() { return Iterator(m_entityManager, m_count, m_mask); }
+    Iterator end() { return Iterator(m_entityManager); }
 
   private:
     // The entity manager we are iterating over.

@@ -65,14 +65,15 @@ public:
   // Update the specified system with the specified adjustment.  Returns true if
   // the system was updated successfully.  Returns false if the system doesn't
   // exist in this manager.
-  template <typename SystemType>
-  bool update(float adjustment) {
+  template <typename SystemType, typename... Args>
+  bool update(Args&&... args) {
     // Get the id for the system.
     size_t systemId = IdForType<SystemType>::getId();
 
     // Get the system.
     auto it = m_systems.find(systemId);
     if (it == std::end(m_systems)) {
+      NOTREACHED();
       return false;
     }
 
@@ -80,7 +81,8 @@ public:
     SystemType* system = static_cast<SystemType*>(it->second.system);
 
     // Update the system.
-    system->update(*m_entityManager, *m_eventManager, adjustment);
+    system->update(*m_entityManager, *m_eventManager,
+                   std::forward<Args>(args)...);
 
     // Success.
     return true;
