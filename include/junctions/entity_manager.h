@@ -62,32 +62,10 @@ public:
   // Add a new entity to this manager and return the newly created entity.
   Entity* createEntity();
 
-  template <typename... ComponentTypes>
-  bool unpack(Entity& entity) const {
-    return unpack_<0, ComponentTypes...>(entity);
-  }
-
-  template <size_t N, typename ComponentType>
-  bool unpack_(Entity& entity) const {
-    LOG(Info) << "0: " << IdForType<ComponentType>::getId();
-    return true;
-  }
-
-  template <size_t N, typename ComponentType1, typename ComponentType2, typename... ComponentTypes>
-  bool unpack_(Entity& entity) const {
-    LOG(Info) << "1: " << IdForType<ComponentType1>::getId();
-    return unpack_<N + 1, ComponentType2, ComponentTypes...>(entity);
-  }
-
   // Return a view of all entities in the manager.
   template <typename... ComponentTypes>
   void allEntitiesWithComponent() {
-    for (auto& entity : m_entities) {
-      bool hasComponent = unpack<ComponentTypes...>(entity);
-      LOG(Info) << hasComponent;
-    }
   }
-  
 
   // Iteration
   Iterator begin() { return Iterator(this); }

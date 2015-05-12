@@ -36,6 +36,7 @@ TEST(EntityManagerTest, Basic) {
   Entity* entity1 = em.createEntity();
 
   entity1->addComponent<MoveComponent>(10, 20);
+  ASSERT_TRUE(entity1->hasComponent<MoveComponent>());
   auto moveComp = entity1->getComponent<MoveComponent>();
   ASSERT_TRUE(moveComp != nullptr);
   EXPECT_EQ(10, moveComp->x);

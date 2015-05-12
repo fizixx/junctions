@@ -5,6 +5,10 @@ project("junctions")
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
+if(NOT MSVC)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1y")
+endif()
+
 # Dependencies
 
 option(JUNCTIONS_BUILD_DEPENDENCIES "Build all dependencies with this library")

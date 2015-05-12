@@ -16,8 +16,8 @@
 
 namespace ju {
 
-Entity::Entity(Entity&& other) {
-  m_components.swap(other.m_components);
-}
+Entity::Entity() { m_components.fill(nullptr); }
+
+Entity::Entity(Entity&& other) { m_components.swap(other.m_components); }
 
 }  // namespace ju

@@ -15,8 +15,9 @@
 #ifndef JUNCTIONS_ENTITY_H_
 #define JUNCTIONS_ENTITY_H_
 
+#include <array>
+#include <bitset>
 #include <memory>
-#include <unordered_map>
 
 #include <nucleus/macros.h>
 
@@ -24,23 +25,41 @@
 
 namespace ju {
 
+using ComponentId = std::size_t;
+
+namespace detail {
+
+inline ComponentId getUniqueComponentId() {
+  static ComponentId nextId = 0;
+  return nextId++;
+}
+
+template <typename ComponentType>
+inline ComponentId getComponentId() {
+  static ComponentId componentId = getUniqueComponentId();
+  return componentId;
+}
+
+}  // namespace detail
+
 class Entity {
 public:
-  Entity() = default;
+  static const size_t kMaxComponent = 64;
 
+  Entity();
   Entity(Entity&& other);
 
   // Add a component to this entity.
   template <typename ComponentType, typename... Args>
   void addComponent(Args&&... args) {
     // Get the ID for the component.
-    size_t componentId = IdForType<ComponentType>::getId();
+    ComponentId componentId = detail::getComponentId<ComponentType>();
 
-    // Create the component.
-    auto newComponent = new ComponentType(std::forward<Args>(args)...);
+    // Add the new component to our list of components.
+    m_components[componentId] = new ComponentType(std::forward<Args>(args)...);
 
-    // Add the component to our list of components.
-    m_components.insert(std::make_pair(componentId, newComponent));
+    // Set the component in our flags.
+    m_componentFlags.set(componentId);
   }
 
   // Get the specified component from this entity.  Returns null if this entity
@@ -48,21 +67,28 @@ public:
   template <typename ComponentType>
   ComponentType* getComponent() {
     // Get the ID for the component.
-    size_t componentId = IdForType<ComponentType>::getId();
+    ComponentId componentId = detail::getComponentId<ComponentType>();
 
     // Find the component and return it if we have it.
-    auto it = m_components.find(componentId);
-    if (it != std::end(m_components)) {
-      return static_cast<ComponentType*>(it->second);
-    }
+    return static_cast<ComponentType*>(m_components[componentId]);
+  }
 
-    // This entity doesn't have the specified component.
-    return nullptr;
+  // Returns true if this entity has the specified component.
+  template <typename ComponentType>
+  bool hasComponent() {
+    // Get the ID of the component.
+    ComponentId componentId = detail::getComponentId<ComponentType>();
+
+    // Return whether the flags have that bit set or not.
+    return m_componentFlags.test(componentId);
   }
 
 private:
+  // We set a bit for each component we add to the entity.
+  std::bitset<kMaxComponent> m_componentFlags;
+
   // Map component type id's to component instances.
-  std::unordered_map<size_t, void*> m_components;
+  std::array<void*, kMaxComponent> m_components;
 
   DISALLOW_COPY_AND_ASSIGN(Entity);
 };
