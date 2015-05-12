@@ -47,10 +47,28 @@ class Entity {
 public:
   static const size_t kMaxComponents = 16;
 
-  using ComponentFlags = std::bitset<kMaxComponents>;
+  using ComponentMask = std::bitset<kMaxComponents>;
 
   Entity();
   Entity(Entity&& other);
+
+  // Returns true if this entity has the specified component.
+  template <typename ComponentType>
+  bool hasComponent() {
+    // Get the ID of the component.
+    ComponentId componentId = detail::getComponentId<ComponentType>();
+
+    // Return whether the mask has that bit set or not.
+    return m_mask.test(componentId);
+  }
+
+  // Returns the component mask for this entity.
+  const ComponentMask& getMask() const { return m_mask; }
+
+  // Returns true if our component mask contains those given.
+  bool hasComponents(const ComponentMask& mask) {
+    return (m_mask & mask) == mask;
+  }
 
   // Add a component to this entity.
   template <typename ComponentType, typename... Args>
@@ -61,8 +79,8 @@ public:
     // Add the new component to our list of components.
     m_components[componentId] = new ComponentType(std::forward<Args>(args)...);
 
-    // Set the component in our flags.
-    m_componentFlags.set(componentId);
+    // Set the component in our mask.
+    m_mask.set(componentId);
   }
 
   // Get the specified component from this entity.  Returns null if this entity
@@ -76,27 +94,9 @@ public:
     return static_cast<ComponentType*>(m_components[componentId]);
   }
 
-  // Returns true if this entity has the specified component.
-  template <typename ComponentType>
-  bool hasComponent() {
-    // Get the ID of the component.
-    ComponentId componentId = detail::getComponentId<ComponentType>();
-
-    // Return whether the flags have that bit set or not.
-    return m_componentFlags.test(componentId);
-  }
-
-  // Returns the component flags for this entity.
-  const ComponentFlags& getComponentFlags() const { return m_componentFlags; }
-
-  // Returns true if our component flags contains those given.
-  bool containsComponents(const ComponentFlags& flags) {
-    return (m_componentFlags & flags) == flags;
-  }
-
 private:
-  // We set a bit for each component we add to the entity.
-  ComponentFlags m_componentFlags;
+  // We build up a mask with each bit representing a component that we have.
+  ComponentMask m_mask;
 
   // Map component type id's to component instances.
   std::array<void*, kMaxComponents> m_components;

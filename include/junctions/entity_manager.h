@@ -33,8 +33,8 @@ public:
   public:
     // Construct an Iterator with the specified manager and index.
     Iterator(EntityManager* manager, size_t index,
-             const Entity::ComponentFlags& flags)
-      : m_manager(manager), m_index(index), m_flags(flags) {
+             const Entity::ComponentMask& mask)
+      : m_manager(manager), m_index(index), m_mask(mask) {
       next();
     }
 
@@ -54,9 +54,9 @@ public:
     const Entity& operator*() const { return m_manager->m_entities[m_index]; }
 
   private:
-    // Move the index to the next entity that matches our flags.
+    // Move the index to the next entity that matches our mask.
     void next() {
-      while (!m_manager->m_entities[m_index].containsComponents(m_flags) &&
+      while (!m_manager->m_entities[m_index].hasComponents(m_mask) &&
              m_index != m_manager->m_entities.size()) {
         ++m_index;
       }
@@ -68,18 +68,18 @@ public:
     // The current index into the list of entiries.
     size_t m_index;
 
-    // The flags we are filtering.
-    Entity::ComponentFlags m_flags;
+    // The mask we are filtering on.
+    Entity::ComponentMask m_mask;
   };
 
   class EntitiesView {
   public:
     EntitiesView(EntityManager* entityManager, size_t count,
-                 const Entity::ComponentFlags& flags);
+                 const Entity::ComponentMask& mask);
     ~EntitiesView() = default;
 
-    Iterator begin() { return Iterator(m_entityManager, 0, m_flags); }
-    Iterator end() { return Iterator(m_entityManager, m_count, m_flags); }
+    Iterator begin() { return Iterator(m_entityManager, 0, m_mask); }
+    Iterator end() { return Iterator(m_entityManager, m_count, m_mask); }
 
   private:
     // The entity manager we are iterating over.
@@ -88,8 +88,8 @@ public:
     // The maximum number of components in the list.
     size_t m_count;
 
-    // The flag set we are checking for.
-    Entity::ComponentFlags m_flags;
+    // The mask we are filtering entities on.
+    Entity::ComponentMask m_mask;
   };
 
   EntityManager() = default;
@@ -99,22 +99,22 @@ public:
   Entity* createEntity();
 
   template <typename ComponentType>
-  Entity::ComponentFlags createFlags() {
-    Entity::ComponentFlags flags;
-    flags.set(detail::getComponentId<ComponentType>());
-    return flags;
+  Entity::ComponentMask createMask() {
+    Entity::ComponentMask mask;
+    mask.set(detail::getComponentId<ComponentType>());
+    return mask;
   }
 
   template <typename C1, typename C2, typename... ComponentTypes>
-  Entity::ComponentFlags createFlags() {
-    return createFlags<C1>() | createFlags<C2, ComponentTypes...>();
+  Entity::ComponentMask createMask() {
+    return createMask<C1>() | createMask<C2, ComponentTypes...>();
   }
 
   // Return a view of all entities in the manager.
   template <typename... ComponentTypes>
   EntitiesView allEntitiesWithComponent() {
-    Entity::ComponentFlags flags = createFlags<ComponentTypes...>();
-    return EntitiesView{this, m_entities.size(), flags};
+    Entity::ComponentMask mask = createMask<ComponentTypes...>();
+    return EntitiesView{this, m_entities.size(), mask};
   }
 
 private:
