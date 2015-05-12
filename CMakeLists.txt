@@ -48,3 +48,5 @@ if(JUNCTIONS_BUILD_UNITTESTS)
   target_link_libraries("junctions_tests" "gtest_main" "gtest" "junctions")
   set_property(TARGET "junctions_tests" PROPERTY FOLDER "junctions")
 endif()
+
+add_subdirectory("example")
