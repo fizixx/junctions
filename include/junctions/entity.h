@@ -20,6 +20,7 @@
 #include <memory>
 
 #include <nucleus/macros.h>
+#include <nucleus/logging.h>
 
 #include "junctions/utils.h"
 
@@ -44,7 +45,9 @@ inline ComponentId getComponentId() {
 
 class Entity {
 public:
-  static const size_t kMaxComponent = 64;
+  static const size_t kMaxComponents = 16;
+
+  using ComponentFlags = std::bitset<kMaxComponents>;
 
   Entity();
   Entity(Entity&& other);
@@ -83,12 +86,20 @@ public:
     return m_componentFlags.test(componentId);
   }
 
+  // Returns the component flags for this entity.
+  const ComponentFlags& getComponentFlags() const { return m_componentFlags; }
+
+  // Returns true if our component flags contains those given.
+  bool containsComponents(const ComponentFlags& flags) {
+    return (m_componentFlags & flags) == flags;
+  }
+
 private:
   // We set a bit for each component we add to the entity.
-  std::bitset<kMaxComponent> m_componentFlags;
+  ComponentFlags m_componentFlags;
 
   // Map component type id's to component instances.
-  std::array<void*, kMaxComponent> m_components;
+  std::array<void*, kMaxComponents> m_components;
 
   DISALLOW_COPY_AND_ASSIGN(Entity);
 };

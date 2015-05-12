@@ -56,16 +56,18 @@ TEST(EntityManagerTest, Iteration) {
   Entity* e2 = em.createEntity();
   e2->addComponent<MoveComponent>(20, 30);
 
-  for (auto& entity : em) {
-    MoveComponent* moveComp = entity.getComponent<MoveComponent>();
-    if (moveComp) {
-      LOG(Info) << "moveComp: " << moveComp->x << ", " << moveComp->y;
-    }
+  for (auto& entity : em.allEntitiesWithComponent<MoveComponent>()) {
+    EXPECT_TRUE(entity.hasComponent<MoveComponent>());
+  }
 
-    AnotherComponent* anotherComp = entity.getComponent<AnotherComponent>();
-    if (anotherComp) {
-      LOG(Info) << "anotherComp: " << anotherComp->someValue;
-    }
+  for (auto& entity : em.allEntitiesWithComponent<AnotherComponent>()) {
+    EXPECT_TRUE(entity.hasComponent<AnotherComponent>());
+  }
+
+  for (auto& entity :
+       em.allEntitiesWithComponent<MoveComponent, AnotherComponent>()) {
+    EXPECT_TRUE(entity.hasComponent<MoveComponent>());
+    EXPECT_TRUE(entity.hasComponent<AnotherComponent>());
   }
 }
 

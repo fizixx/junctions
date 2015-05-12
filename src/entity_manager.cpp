@@ -16,6 +16,11 @@
 
 namespace ju {
 
+EntityManager::EntitiesView::EntitiesView(EntityManager* entityManager,
+                                          size_t count,
+                                          const Entity::ComponentFlags& flags)
+  : m_entityManager(entityManager), m_count(count), m_flags(flags) {}
+
 Entity* EntityManager::createEntity() {
   m_entities.emplace_back();
   return &m_entities.back();

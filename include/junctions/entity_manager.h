@@ -32,11 +32,15 @@ public:
   class Iterator : public std::iterator<std::input_iterator_tag, Entity*> {
   public:
     // Construct an Iterator with the specified manager and index.
-    Iterator(EntityManager* manager, size_t index = 0)
-      : m_manager(manager), m_index(index) {}
+    Iterator(EntityManager* manager, size_t index,
+             const Entity::ComponentFlags& flags)
+      : m_manager(manager), m_index(index), m_flags(flags) {
+      next();
+    }
 
     Iterator& operator++() {
       ++m_index;
+      next();
       return *this;
     }
 
@@ -50,28 +54,72 @@ public:
     const Entity& operator*() const { return m_manager->m_entities[m_index]; }
 
   private:
+    // Move the index to the next entity that matches our flags.
+    void next() {
+      while (!m_manager->m_entities[m_index].containsComponents(m_flags) &&
+             m_index != m_manager->m_entities.size()) {
+        ++m_index;
+      }
+    }
+
     // The manager we are iterating over.
     EntityManager* m_manager;
 
     // The current index into the list of entiries.
     size_t m_index;
+
+    // The flags we are filtering.
+    Entity::ComponentFlags m_flags;
+  };
+
+  class EntitiesView {
+  public:
+    EntitiesView(EntityManager* entityManager, size_t count,
+                 const Entity::ComponentFlags& flags);
+    ~EntitiesView() = default;
+
+    Iterator begin() { return Iterator(m_entityManager, 0, m_flags); }
+    Iterator end() { return Iterator(m_entityManager, m_count, m_flags); }
+
+  private:
+    // The entity manager we are iterating over.
+    EntityManager* m_entityManager;
+
+    // The maximum number of components in the list.
+    size_t m_count;
+
+    // The flag set we are checking for.
+    Entity::ComponentFlags m_flags;
   };
 
   EntityManager() = default;
+  ~EntityManager() = default;
 
   // Add a new entity to this manager and return the newly created entity.
   Entity* createEntity();
 
-  // Return a view of all entities in the manager.
-  template <typename... ComponentTypes>
-  void allEntitiesWithComponent() {
+  template <typename ComponentType>
+  Entity::ComponentFlags createFlags() {
+    Entity::ComponentFlags flags;
+    flags.set(detail::getComponentId<ComponentType>());
+    return flags;
   }
 
-  // Iteration
-  Iterator begin() { return Iterator(this); }
-  Iterator end() { return Iterator(this, m_entities.size()); }
+  template <typename C1, typename C2, typename... ComponentTypes>
+  Entity::ComponentFlags createFlags() {
+    return createFlags<C1>() | createFlags<C2, ComponentTypes...>();
+  }
+
+  // Return a view of all entities in the manager.
+  template <typename... ComponentTypes>
+  EntitiesView allEntitiesWithComponent() {
+    Entity::ComponentFlags flags = createFlags<ComponentTypes...>();
+    return EntitiesView{this, m_entities.size(), flags};
+  }
 
 private:
+  friend class Iterator;
+
   // All the entities that we own.
   std::vector<Entity> m_entities;
 
