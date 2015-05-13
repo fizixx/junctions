@@ -15,6 +15,8 @@
 #include <gtest/gtest.h>
 
 #include "junctions/entity_manager.h"
+#include "junctions/event_manager.h"
+#include "junctions/system_manager.h"
 
 namespace ju {
 
@@ -31,7 +33,7 @@ struct AnotherComponent {
 };
 
 TEST(EntityManagerTest, Basic) {
-  EntityManager em;
+  EntityManager em{nullptr};
 
   Entity* entity1 = em.createEntity();
 
@@ -47,7 +49,7 @@ TEST(EntityManagerTest, Basic) {
 }
 
 TEST(EntityManagerTest, Iteration) {
-  EntityManager em;
+  EntityManager em{nullptr};
 
   Entity* e1 = em.createEntity();
   e1->addComponent<MoveComponent>(10, 20);

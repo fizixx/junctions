@@ -23,6 +23,9 @@
 
 namespace ju {
 
+class EntityManager;
+class EventManager;
+
 namespace detail {
 
 template <typename SystemType>
@@ -32,10 +35,33 @@ struct SystemDeleter {
   }
 };
 
-}  // namespace detail
+template <typename SystemType>
+struct HasConfigureFunction {
+  template <typename C>
+  static std::true_type check(C*, decltype(SystemType::configure)* = 0);
+  static std::false_type check(...);
 
-class EntityManager;
-class EventManager;
+  enum { value = decltype(check(static_cast<SystemType*>(0)))::value };
+};
+
+template <typename SystemType>
+void callConfigure(
+    typename std::enable_if<!HasConfigureFunction<SystemType>::value,
+                            SystemType>::type* system,
+    EventManager* eventManager) {
+  LOG(Warning) << "System not configurable!";
+}
+
+template <typename SystemType>
+void callConfigure(
+    typename std::enable_if<HasConfigureFunction<SystemType>::value,
+                            SystemType>::type* system,
+    EventManager* eventManager) {
+  DCHECK(eventManager);
+  system->configure(*eventManager);
+}
+
+}  // namespace detail
 
 class SystemManager {
 public:
@@ -54,12 +80,31 @@ public:
     // Create the new system.
     SystemType* system = new SystemType{std::forward<Args>(args)...};
 
+    // Configure the new system.
+    detail::callConfigure<SystemType>(system, m_eventManager);
+
     // Create the details for the system.
     SystemDetails details{system,
                           &detail::SystemDeleter<SystemType>::deleteSystem};
 
     // Insert the new system into our map.
     m_systems.insert(std::make_pair(systemId, details));
+  }
+
+  // Get the instance of the system from the manager.  Returns null if the
+  // system doesn't exist in the manager.
+  template <typename SystemType>
+  SystemType* getSystem() {
+    // Get the id for the system.
+    size_t systemId = IdForType<SystemType>::getId();
+
+    // Get the system.
+    auto it = m_systems.find(systemId);
+    if (it == std::end(m_systems)) {
+      return nullptr;
+    }
+
+    return static_cast<SystemType*>(it->second.system);
   }
 
   // Update the specified system with the specified adjustment.  Returns true if

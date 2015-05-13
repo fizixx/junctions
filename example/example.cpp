@@ -37,18 +37,18 @@ struct Drawable {
 
   Drawable(std::unique_ptr<sf::Shape> shape) : shape(std::move(shape)) {}
 
-  void updatePosition(const sf::Vector2f& pos) {
-    if (shape) {
-      shape->setPosition(pos);
-    }
-  }
-
-  void draw(sf::RenderTarget& target) {
+  void draw(sf::RenderTarget& target, const sf::Vector2f& pos) {
     if (shape) {
       shape->setFillColor(isOver ? sf::Color{255, 0, 0} : sf::Color{0, 255, 0});
-      target.draw(*shape);
+      target.draw(*shape, sf::Transform{}.translate(pos));
     }
   }
+};
+
+struct MouseMoved {
+  sf::Vector2f worldPos;
+
+  MouseMoved(const sf::Vector2f& worldPos) : worldPos(worldPos) {}
 };
 
 struct DrawSystem {
@@ -61,8 +61,7 @@ struct DrawSystem {
       auto transformable = entity.getComponent<Transformable>();
       auto drawable = entity.getComponent<Drawable>();
 
-      drawable->updatePosition(transformable->pos);
-      drawable->draw(target);
+      drawable->draw(target, transformable->pos);
     }
   }
 };
@@ -70,19 +69,29 @@ struct DrawSystem {
 struct EventSystem {
   EventSystem() = default;
 
+  void configure(ju::EventManager& events) {
+    events.subscribe<MouseMoved>(this);
+  }
+
   void update(ju::EntityManager& entities, ju::EventManager& events,
               sf::RenderTarget& target, sf::Event& event) {
     if (event.type == sf::Event::MouseMoved) {
-      for (auto& entity : entities.allEntitiesWithComponent<Drawable>()) {
-        // We use the drawable component to figure out the bounds of the entity.
-        auto drawable = entity.getComponent<Drawable>();
+      // Convert the mouse position to world position.
+      sf::Vector2f mousePos = target.mapPixelToCoords(
+          sf::Vector2i{event.mouseMove.x, event.mouseMove.y});
 
-        // Convert the mouse position to world position.
-        sf::Vector2f mousePos = target.mapPixelToCoords(
-            sf::Vector2i{event.mouseMove.x, event.mouseMove.y});
+      // Emit a mouse moved signal.
+      events.emit<MouseMoved>(mousePos);
+
+      for (auto& entity :
+           entities.allEntitiesWithComponent<Transformable, Drawable>()) {
+        auto transformable = entity.getComponent<Transformable>();
+        auto drawable = entity.getComponent<Drawable>();
 
         // Get the bounds of the entity.
         sf::FloatRect bounds = drawable->shape->getGlobalBounds();
+        bounds.left += transformable->pos.x;
+        bounds.top += transformable->pos.y;
 
         // Update the state on the entity.
         drawable->isOver = bounds.contains(mousePos);
@@ -90,7 +99,10 @@ struct EventSystem {
     }
   }
 
-  bool mouseIsDown{false};
+  void receive(const MouseMoved& mouseMoved) {
+    LOG(Info) << "Mouse moved: " << mouseMoved.worldPos.x << ", "
+              << mouseMoved.worldPos.y;
+  }
 };
 
 struct World {

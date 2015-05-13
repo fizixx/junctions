@@ -48,6 +48,7 @@ if(JUNCTIONS_BUILD_UNITTESTS)
   set("junctions_TEST_FILES"
     "tests/entity_manager_tests.cpp"
     "tests/event_manager_tests.cpp"
+    "tests/system_manager_tests.cpp"
   )
 
   add_executable("junctions_tests" ${junctions_TEST_FILES})
