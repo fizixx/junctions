@@ -98,9 +98,9 @@ struct World {
   ju::EntityManager entities;
   ju::SystemManager systems;
 
-  World(const sf::View& view)
+  World()
     : events{}, entities{&events}, systems{&entities, &events} {
-    systems.addSystem<EventSystem>(view);
+    systems.addSystem<EventSystem>();
     systems.addSystem<DrawSystem>();
   }
 
@@ -143,7 +143,7 @@ int main(int argc, char* argv[]) {
                               static_cast<float>(windowSize.y)}};
   window.setView(view);
 
-  World world{window.getView()};
+  World world;
   world.createEntities(10);
 
   while (window.isOpen()) {
