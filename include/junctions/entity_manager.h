@@ -194,11 +194,21 @@ public:
   // specified id.
   template <typename ComponentType>
   ComponentType* getComponent(const Entity& entity) {
-    // Get pool that the component lives in.
-    Pool<ComponentType>* componentPool = getComponentPool<ComponentType>();
+    // Get the id for the component type.
+    auto componentId = detail::getComponentId<ComponentType>();
+
+    // If we don't have a pool for this type of component, we definately don't
+    // have this component.
+    if (componentId >= m_componentPools.size()) {
+      return nullptr;
+    }
+
+    // Get the pool for the component type.
+    Pool<ComponentType>* componentPool =
+        static_cast<Pool<ComponentType>*>(m_componentPools[componentId]);
     DCHECK(componentPool);
 
-    // Return the component.
+    // Return the component from the pool.
     return componentPool->get(entity.getId());
   }
 
@@ -208,9 +218,19 @@ public:
     // Get the id of the component type.
     auto componentId = detail::getComponentId<ComponentType>();
 
-    // Return the result of testing for the component id in the entity's
-    // component mask.
-    return m_componentMasks[entity.getId()].test(componentId);
+    // If we don't have a pool for this component, don't even bother checking.
+    if (componentId >= m_componentPools.size()) {
+      return false;
+    }
+
+    // Get the pool for the component type.
+    detail::PoolBase* pool = m_componentPools[componentId];
+
+    if (!pool || !m_componentMasks[entity.getId()][componentId]) {
+      return false;
+    }
+
+    return true;
   }
 
 private:
