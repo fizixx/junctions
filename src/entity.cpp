@@ -17,13 +17,6 @@
 namespace ju {
 
 Entity::Entity() {
-  m_components.fill(nullptr);
-}
-
-Entity::Entity(Entity&& other) {
-  using std::swap;
-  swap(m_mask, other.m_mask);
-  m_components.swap(other.m_components);
 }
 
 }  // namespace ju

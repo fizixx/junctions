@@ -48,12 +48,17 @@ class EventManager;
 
 class EntityManager {
 public:
+  static const size_t kMaxComponents = 16;
+
+  using ComponentMask = std::bitset<kMaxComponents>;
+
+#if 0
   // Iterator we use to traverse all the entities in the manager.
   class Iterator : public std::iterator<std::input_iterator_tag, Entity> {
   public:
     // Construct an Iterator with the specified manager and index.
     Iterator(EntityManager* manager, size_t index,
-             const Entity::ComponentMask& mask)
+             const ComponentMask& mask)
       : m_manager(manager), m_index(index),
         m_maxSize(m_manager->m_entities.size()), m_mask(mask) {
       next();
@@ -87,9 +92,11 @@ public:
     // Move the index to the next entity that matches our mask.
     void next() {
       while (m_index != m_maxSize) {
+#if 0
         if (m_manager->m_entities[m_index].hasComponents(m_mask)) {
           break;
         }
+#endif  // 0
         ++m_index;
       }
     }
@@ -106,7 +113,9 @@ public:
     // The mask we are filtering on.
     Entity::ComponentMask m_mask;
   };
+#endif  // 0
 
+#if 0
   class EntitiesView {
   public:
     EntitiesView(EntityManager* entityManager, size_t count,
@@ -126,45 +135,54 @@ public:
     // The mask we are filtering entities on.
     Entity::ComponentMask m_mask;
   };
+#endif  // 0
 
   explicit EntityManager(EventManager* eventManager)
     : m_eventManager(eventManager) {}
+
   ~EntityManager() = default;
 
-  // Add a new entity to this manager and return the newly created entity.
-  Entity* createEntity();
+  // Add a new entity to this manager and return it.
+  Entity createEntity();
 
+#if 0
   template <typename ComponentType>
-  Entity::ComponentMask createMask() {
+  ComponentMask createMask() {
     Entity::ComponentMask mask;
     mask.set(detail::getComponentId<ComponentType>());
     return mask;
   }
 
   template <typename C1, typename C2, typename... ComponentTypes>
-  Entity::ComponentMask createMask() {
+  ComponentMask createMask() {
     return createMask<C1>() | createMask<C2, ComponentTypes...>();
   }
 
   // Return a view of all entities in the manager.
   template <typename... ComponentTypes>
   EntitiesView allEntitiesWithComponent() {
-    Entity::ComponentMask mask = createMask<ComponentTypes...>();
+    ComponentMask mask = createMask<ComponentTypes...>();
     return EntitiesView{this, m_entities.size(), mask};
   }
+#endif  // 0
 
   // Add a component with the specified type to the specified entity.
   template <typename ComponentType, typename... Args>
-  ComponentType* addComponent(Entity::Id entityId, Args&&... args) {
-    // Get the id for the component.
-    auto componentId = detail::getComponentId<ComponentType>();
+  ComponentType* createComponent(const Entity& entity, Args&&... args) {
+    // Make sure we don't have the component already.
+    DCHECK(!hasComponent<ComponentType>(entity));
 
-    // TODO: Make sure the entity doesn't have this component already.
-
-    // Create the component in the component pools.
+    // Get the pool that the component lives in.
     Pool<ComponentType>* componentPool = getComponentPool<ComponentType>();
-    ComponentType* component = componentPool->create<ComponentType>(
-        entityId, std::forward<Args>(args)...);
+    DCHECK(componentPool);
+
+    // Get the component.
+    ComponentType* component =
+        componentPool->create(entity.getId(), std::forward<Args>(args)...);
+
+    // Update the component mask for the entity.
+    m_componentMasks[entity.getId()].set(
+        detail::getComponentId<ComponentType>());
 
     // TODO: Send an event that a new component was added.
 
@@ -175,20 +193,31 @@ public:
   // Get the component with the specified type from the entity with the
   // specified id.
   template <typename ComponentType>
-  ComponentType* getComponent(Entity::Id entityId) {
-    // Get the id of the component.
-    auto componentId = detail::getComponentId<ComponentType>();
-
-    // Get the component from the pool.
-    Pool<ComponentType> componentPool = getComponentPool<ComponentType>();
-    ComponentType* component = componentPool.get(id);
+  ComponentType* getComponent(const Entity& entity) {
+    // Get pool that the component lives in.
+    Pool<ComponentType>* componentPool = getComponentPool<ComponentType>();
+    DCHECK(componentPool);
 
     // Return the component.
-    return component;
+    return componentPool->get(entity.getId());
+  }
+
+  // Returns true if the specified entity has the specified component.
+  template <typename ComponentType>
+  bool hasComponent(const Entity& entity) {
+    // Get the id of the component type.
+    auto componentId = detail::getComponentId<ComponentType>();
+
+    // Return the result of testing for the component id in the entity's
+    // component mask.
+    return m_componentMasks[entity.getId()].test(componentId);
   }
 
 private:
   friend class Iterator;
+
+  // Ensure that we have room for the the given amount of entities.
+  void ensureEntityCount(size_t count);
 
   // Get or create the component pool for the specified component type.
   template <typename ComponentType>
@@ -197,14 +226,14 @@ private:
     auto componentId = detail::getComponentId<ComponentType>();
 
     // Make sure we have an index for this pool.
-    if (m_componentPools.size() < componentId) {
+    if (m_componentPools.size() < componentId + 1) {
       m_componentPools.resize(componentId + 1, nullptr);
     }
 
     // Create the pool if it doesn't exist already.
-    if (!m_componentPools[componeneId]) {
+    if (!m_componentPools[componentId]) {
       Pool<ComponentType>* pool = new Pool<ComponentType>();
-      pool->ensureSize(m_entities.size());
+      pool->ensureSize(m_nextEntityIndex);
       m_componentPools[componentId] = pool;
     }
 
@@ -215,11 +244,14 @@ private:
   // The event manager we use to send events.
   EventManager* m_eventManager;
 
-  // All the entities that we own.
-  std::vector<Entity> m_entities;
+  // A list of all entity component masks.
+  std::vector<ComponentMask> m_componentMasks;
 
   // A pool of components for each component type.
   std::vector<detail::PoolBase*> m_componentPools;
+
+  // The index of the next entity we can create.
+  size_t m_nextEntityIndex{0};
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(EntityManager);
 };

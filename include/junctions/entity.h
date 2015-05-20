@@ -26,27 +26,35 @@
 
 namespace ju {
 
+class EntityManager;
+
 class Entity {
 public:
   using Id = size_t;
 
-  static const size_t kMaxComponents = 16;
-
-  using ComponentMask = std::bitset<kMaxComponents>;
-
+  // Create an invalid blank entity.
   Entity();
-  Entity(Entity&& other);
+
+  Entity(EntityManager* entityManager, Id id)
+    : m_entityManager(entityManager), m_id(id) {}
+
+  // Return the id for this entity.
+  const Id& getId() const { return m_id; }
 
   // Returns true if this entity has the specified component.
   template <typename ComponentType>
   bool hasComponent() {
+#if 0
     // Get the ID of the component.
     ComponentId componentId = detail::getComponentId<ComponentType>();
 
     // Return whether the mask has that bit set or not.
     return m_mask.test(componentId);
+#endif
+    return false;
   }
 
+#if 0
   // Returns the component mask for this entity.
   const ComponentMask& getMask() const { return m_mask; }
 
@@ -54,6 +62,7 @@ public:
   bool hasComponents(const ComponentMask& mask) {
     return (m_mask & mask) == mask;
   }
+#endif  // 0
 
   // Add a component to this entity.
   template <typename ComponentType, typename... Args>
@@ -82,12 +91,6 @@ private:
 
   // The Id we were assigned by the EntityManager when we were created.
   Id m_id;
-
-  // We build up a mask with each bit representing a component that we have.
-  ComponentMask m_mask;
-
-  // Map component type id's to component instances.
-  std::array<void*, kMaxComponents> m_components;
 };
 
 }  // namespace ju

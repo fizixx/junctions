@@ -57,13 +57,13 @@ public:
 
 protected:
   // Get a pointer to the element with the specified index.
-  inline void *getInternal(size_t index) {
+  inline void* getInternal(size_t index) {
     DCHECK(index < m_size);
     return m_chunks[index / m_elementsPerChunk] +
            (index % m_elementsPerChunk) * m_elementSize;
   }
 
-  inline const void *getInternal(size_t index) const {
+  inline const void* getInternal(size_t index) const {
     DCHECK(index < m_size);
     return m_chunks[index / m_elementsPerChunk] +
            (index % m_elementsPerChunk) * m_elementSize;

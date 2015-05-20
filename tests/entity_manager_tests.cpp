@@ -35,9 +35,15 @@ struct AnotherComponent {
 TEST(EntityManagerTest, Basic) {
   EntityManager em{nullptr};
 
-  Entity* entity1 = em.createEntity();
+  Entity entity1 = em.createEntity();
+  Entity entity2 = em.createEntity();
 
-  entity1->addComponent<MoveComponent>(10, 20);
+  EXPECT_EQ(0, entity1.getId());
+  EXPECT_EQ(1, entity2.getId());
+
+  // entity1->addComponent<MoveComponent>(10, 20);
+
+#if 0
   ASSERT_TRUE(entity1->hasComponent<MoveComponent>());
   auto moveComp = entity1->getComponent<MoveComponent>();
   ASSERT_TRUE(moveComp != nullptr);
@@ -46,9 +52,46 @@ TEST(EntityManagerTest, Basic) {
 
   auto anotherComp = entity1->getComponent<AnotherComponent>();
   EXPECT_TRUE(anotherComp == nullptr);
+#endif  // 0
+}
+
+TEST(EntityManagerTest, ComponentsThroughManager) {
+  EntityManager em{nullptr};
+
+  Entity entity1 = em.createEntity();
+
+  {
+    auto moveComponent = em.createComponent<MoveComponent>(entity1, 10, 20);
+    EXPECT_EQ(10, moveComponent->x);
+    EXPECT_EQ(20, moveComponent->y);
+
+    EXPECT_TRUE(em.hasComponent<MoveComponent>(entity1));
+    EXPECT_FALSE(em.hasComponent<AnotherComponent>(entity1));
+  }
+
+  Entity entity2 = em.createEntity();
+
+  {
+    auto moveComponent = em.createComponent<MoveComponent>(entity2, 20, 30);
+    EXPECT_EQ(20, moveComponent->x);
+    EXPECT_EQ(30, moveComponent->y);
+
+    auto anotherComponent = em.createComponent<AnotherComponent>(entity2);
+    EXPECT_EQ(10, anotherComponent->someValue);
+
+    EXPECT_TRUE(em.hasComponent<MoveComponent>(entity2));
+    EXPECT_TRUE(em.hasComponent<AnotherComponent>(entity2));
+  }
+
+  {
+    auto moveComponent = em.getComponent<MoveComponent>(entity1);
+    EXPECT_EQ(10, moveComponent->x);
+    EXPECT_EQ(20, moveComponent->y);
+  }
 }
 
 TEST(EntityManagerTest, Iteration) {
+#if 0
   EntityManager em{nullptr};
 
   Entity* e1 = em.createEntity();
@@ -71,6 +114,7 @@ TEST(EntityManagerTest, Iteration) {
     EXPECT_TRUE(entity.hasComponent<MoveComponent>());
     EXPECT_TRUE(entity.hasComponent<AnotherComponent>());
   }
+#endif  // 0
 }
 
 }  // namespace ju
