@@ -19,12 +19,30 @@
 #include <set>
 #include <vector>
 
-#include <nucleus/logging.h>
-#include <nucleus/macros.h>
+#include "nucleus/logging.h"
+#include "nucleus/macros.h"
 
 #include "junctions/entity.h"
+#include "junctions/pool.h"
 
 namespace ju {
+
+using ComponentId = std::size_t;
+
+namespace detail {
+
+inline ComponentId getUniqueComponentId() {
+  static ComponentId nextId = 0;
+  return nextId++;
+}
+
+template <typename ComponentType>
+inline ComponentId getComponentId() {
+  static ComponentId componentId = getUniqueComponentId();
+  return componentId;
+}
+
+}  // namespace detail
 
 class EventManager;
 
@@ -135,14 +153,73 @@ public:
     return EntitiesView{this, m_entities.size(), mask};
   }
 
+  // Add a component with the specified type to the specified entity.
+  template <typename ComponentType, typename... Args>
+  ComponentType* addComponent(Entity::Id entityId, Args&&... args) {
+    // Get the id for the component.
+    auto componentId = detail::getComponentId<ComponentType>();
+
+    // TODO: Make sure the entity doesn't have this component already.
+
+    // Create the component in the component pools.
+    Pool<ComponentType>* componentPool = getComponentPool<ComponentType>();
+    ComponentType* component = componentPool->create<ComponentType>(
+        entityId, std::forward<Args>(args)...);
+
+    // TODO: Send an event that a new component was added.
+
+    // Return a pointer to the newly created component.
+    return component;
+  }
+
+  // Get the component with the specified type from the entity with the
+  // specified id.
+  template <typename ComponentType>
+  ComponentType* getComponent(Entity::Id entityId) {
+    // Get the id of the component.
+    auto componentId = detail::getComponentId<ComponentType>();
+
+    // Get the component from the pool.
+    Pool<ComponentType> componentPool = getComponentPool<ComponentType>();
+    ComponentType* component = componentPool.get(id);
+
+    // Return the component.
+    return component;
+  }
+
 private:
   friend class Iterator;
+
+  // Get or create the component pool for the specified component type.
+  template <typename ComponentType>
+  Pool<ComponentType>* getComponentPool() {
+    // Get the component id.
+    auto componentId = detail::getComponentId<ComponentType>();
+
+    // Make sure we have an index for this pool.
+    if (m_componentPools.size() < componentId) {
+      m_componentPools.resize(componentId + 1, nullptr);
+    }
+
+    // Create the pool if it doesn't exist already.
+    if (!m_componentPools[componeneId]) {
+      Pool<ComponentType>* pool = new Pool<ComponentType>();
+      pool->ensureSize(m_entities.size());
+      m_componentPools[componentId] = pool;
+    }
+
+    // Return the pool.
+    return static_cast<Pool<ComponentType>*>(m_componentPools[componentId]);
+  }
 
   // The event manager we use to send events.
   EventManager* m_eventManager;
 
   // All the entities that we own.
   std::vector<Entity> m_entities;
+
+  // A pool of components for each component type.
+  std::vector<detail::PoolBase*> m_componentPools;
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(EntityManager);
 };

@@ -26,6 +26,7 @@ set("junctions_INCLUDE_FILES"
   "include/junctions/entity.h"
   "include/junctions/entity_manager.h"
   "include/junctions/event_manager.h"
+  "include/junctions/pool.h"
   "include/junctions/system_manager.h"
   "include/junctions/utils.h"
 )
@@ -49,6 +50,7 @@ if(JUNCTIONS_BUILD_UNITTESTS)
     "tests/entity_manager_tests.cpp"
     "tests/event_manager_tests.cpp"
     "tests/system_manager_tests.cpp"
+    "tests/pool_tests.cpp"
   )
 
   add_executable("junctions_tests" ${junctions_TEST_FILES})

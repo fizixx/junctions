@@ -26,25 +26,10 @@
 
 namespace ju {
 
-using ComponentId = std::size_t;
-
-namespace detail {
-
-inline ComponentId getUniqueComponentId() {
-  static ComponentId nextId = 0;
-  return nextId++;
-}
-
-template <typename ComponentType>
-inline ComponentId getComponentId() {
-  static ComponentId componentId = getUniqueComponentId();
-  return componentId;
-}
-
-}  // namespace detail
-
 class Entity {
 public:
+  using Id = size_t;
+
   static const size_t kMaxComponents = 16;
 
   using ComponentMask = std::bitset<kMaxComponents>;
@@ -73,14 +58,9 @@ public:
   // Add a component to this entity.
   template <typename ComponentType, typename... Args>
   void addComponent(Args&&... args) {
-    // Get the ID for the component.
-    ComponentId componentId = detail::getComponentId<ComponentType>();
-
-    // Add the new component to our list of components.
-    m_components[componentId] = new ComponentType(std::forward<Args>(args)...);
-
-    // Set the component in our mask.
-    m_mask.set(componentId);
+    // Add a component through the manager.
+    m_entityManager->addComponent<ComponentType>(m_id,
+                                                 std::forward<Args>(args)...);
   }
 
   // Get the specified component from this entity.  Returns null if this entity
@@ -95,13 +75,19 @@ public:
   }
 
 private:
+  friend class EntityManager;
+
+  // The EntityManager that created us.
+  EntityManager* m_entityManager;
+
+  // The Id we were assigned by the EntityManager when we were created.
+  Id m_id;
+
   // We build up a mask with each bit representing a component that we have.
   ComponentMask m_mask;
 
   // Map component type id's to component instances.
   std::array<void*, kMaxComponents> m_components;
-
-  DISALLOW_COPY_AND_ASSIGN(Entity);
 };
 
 }  // namespace ju
