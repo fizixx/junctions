@@ -15,8 +15,6 @@
 #include <gtest/gtest.h>
 
 #include "junctions/entity_manager.h"
-#include "junctions/event_manager.h"
-#include "junctions/system_manager.h"
 
 namespace ju {
 
@@ -40,19 +38,6 @@ TEST(EntityManagerTest, Basic) {
 
   EXPECT_EQ(0, entity1.getId());
   EXPECT_EQ(1, entity2.getId());
-
-  // entity1->addComponent<MoveComponent>(10, 20);
-
-#if 0
-  ASSERT_TRUE(entity1->hasComponent<MoveComponent>());
-  auto moveComp = entity1->getComponent<MoveComponent>();
-  ASSERT_TRUE(moveComp != nullptr);
-  EXPECT_EQ(10, moveComp->x);
-  EXPECT_EQ(20, moveComp->y);
-
-  auto anotherComp = entity1->getComponent<AnotherComponent>();
-  EXPECT_TRUE(anotherComp == nullptr);
-#endif  // 0
 }
 
 TEST(EntityManagerTest, ComponentsThroughManager) {
@@ -85,6 +70,41 @@ TEST(EntityManagerTest, ComponentsThroughManager) {
 
   {
     auto moveComponent = em.getComponent<MoveComponent>(entity1);
+    EXPECT_EQ(10, moveComponent->x);
+    EXPECT_EQ(20, moveComponent->y);
+  }
+}
+
+TEST(EntityManagerTest, ComponentsThroughEntity) {
+  EntityManager em{nullptr};
+
+  Entity entity1 = em.createEntity();
+
+  {
+    auto moveComponent = entity1.createComponent<MoveComponent>(10, 20);
+    EXPECT_EQ(10, moveComponent->x);
+    EXPECT_EQ(20, moveComponent->y);
+
+    EXPECT_TRUE(entity1.hasComponent<MoveComponent>());
+    EXPECT_FALSE(entity1.hasComponent<AnotherComponent>());
+  }
+
+  Entity entity2 = em.createEntity();
+
+  {
+    auto moveComponent = entity2.createComponent<MoveComponent>(20, 30);
+    EXPECT_EQ(20, moveComponent->x);
+    EXPECT_EQ(30, moveComponent->y);
+
+    auto anotherComponent = entity2.createComponent<AnotherComponent>();
+    EXPECT_EQ(10, anotherComponent->someValue);
+
+    EXPECT_TRUE(entity2.hasComponent<MoveComponent>());
+    EXPECT_TRUE(entity2.hasComponent<AnotherComponent>());
+  }
+
+  {
+    auto moveComponent = entity1.getComponent<MoveComponent>();
     EXPECT_EQ(10, moveComponent->x);
     EXPECT_EQ(20, moveComponent->y);
   }

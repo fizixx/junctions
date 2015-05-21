@@ -140,7 +140,12 @@ public:
   explicit EntityManager(EventManager* eventManager)
     : m_eventManager(eventManager) {}
 
-  ~EntityManager() = default;
+  ~EntityManager() {
+    // Delete all the component pools.
+    for (auto& pool : m_componentPools) {
+      delete pool;
+    }
+  }
 
   // Add a new entity to this manager and return it.
   Entity createEntity();
@@ -193,7 +198,7 @@ public:
   // Get the component with the specified type from the entity with the
   // specified id.
   template <typename ComponentType>
-  ComponentType* getComponent(const Entity& entity) {
+  ComponentType* getComponent(const Entity& entity) const {
     // Get the id for the component type.
     auto componentId = detail::getComponentId<ComponentType>();
 
@@ -214,7 +219,7 @@ public:
 
   // Returns true if the specified entity has the specified component.
   template <typename ComponentType>
-  bool hasComponent(const Entity& entity) {
+  bool hasComponent(const Entity& entity) const {
     // Get the id of the component type.
     auto componentId = detail::getComponentId<ComponentType>();
 

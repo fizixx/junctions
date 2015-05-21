@@ -34,7 +34,12 @@ public:
   PoolBase(size_t elementSize, size_t elementsPerChunk)
     : m_elementSize(elementSize), m_elementsPerChunk(elementsPerChunk) {}
 
-  virtual ~PoolBase() {}
+  virtual ~PoolBase() {
+    // Delete all the chunks we allocated.
+    for (auto& chunk : m_chunks) {
+      delete[] chunk;
+    }
+  }
 
   // Make sure we can hold at least the specified amount of elements in the
   // pool.

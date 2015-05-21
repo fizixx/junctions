@@ -41,51 +41,27 @@ public:
   // Return the id for this entity.
   const Id& getId() const { return m_id; }
 
+  template <typename ComponentType, typename... Args>
+  ComponentType* createComponent(Args&&... args) {
+    DCHECK(m_entityManager);
+    return m_entityManager->createComponent<ComponentType>(
+        *this, std::forward<Args>(args)...);
+  }
+
+  template <typename ComponentType>
+  ComponentType* getComponent() const {
+    DCHECK(m_entityManager);
+    return m_entityManager->getComponent<ComponentType>(*this);
+  }
+
   // Returns true if this entity has the specified component.
   template <typename ComponentType>
-  bool hasComponent() {
-#if 0
-    // Get the ID of the component.
-    ComponentId componentId = detail::getComponentId<ComponentType>();
-
-    // Return whether the mask has that bit set or not.
-    return m_mask.test(componentId);
-#endif
-    return false;
-  }
-
-#if 0
-  // Returns the component mask for this entity.
-  const ComponentMask& getMask() const { return m_mask; }
-
-  // Returns true if our component mask contains those given.
-  bool hasComponents(const ComponentMask& mask) {
-    return (m_mask & mask) == mask;
-  }
-#endif  // 0
-
-  // Add a component to this entity.
-  template <typename ComponentType, typename... Args>
-  void addComponent(Args&&... args) {
-    // Add a component through the manager.
-    m_entityManager->addComponent<ComponentType>(m_id,
-                                                 std::forward<Args>(args)...);
-  }
-
-  // Get the specified component from this entity.  Returns null if this entity
-  // doesn't have the specified type of component.
-  template <typename ComponentType>
-  ComponentType* getComponent() {
-    // Get the ID for the component.
-    ComponentId componentId = detail::getComponentId<ComponentType>();
-
-    // Find the component and return it if we have it.
-    return static_cast<ComponentType*>(m_components[componentId]);
+  bool hasComponent() const {
+    DCHECK(m_entityManager);
+    return m_entityManager->hasComponent<ComponentType>(*this);
   }
 
 private:
-  friend class EntityManager;
-
   // The EntityManager that created us.
   EntityManager* m_entityManager;
 
