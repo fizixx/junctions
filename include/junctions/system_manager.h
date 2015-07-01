@@ -17,6 +17,7 @@
 
 #include <unordered_map>
 
+#include "nucleus/logging.h"
 #include "nucleus/macros.h"
 
 #include "junctions/utils.h"
