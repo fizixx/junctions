@@ -30,7 +30,7 @@ class EntityManager;
 
 class Entity {
 public:
-  using Id = size_t;
+  using Id = usize;
 
   // Create an invalid blank entity.
   Entity();

@@ -18,6 +18,7 @@
 #include <unordered_map>
 
 #include "nucleus/macros.h"
+#include "nucleus/types.h"
 
 #include "junctions/utils.h"
 
@@ -72,7 +73,7 @@ public:
   template <typename SystemType, typename... Args>
   void addSystem(Args&&... args) {
     // Get the id of the system.
-    size_t systemId = IdForType<SystemType>::getId();
+    usize systemId = IdForType<SystemType>::getId();
 
     // We can't add a duplicate system.
     DCHECK(m_systems.find(systemId) == std::end(m_systems));
@@ -96,7 +97,7 @@ public:
   template <typename SystemType>
   SystemType* getSystem() {
     // Get the id for the system.
-    size_t systemId = IdForType<SystemType>::getId();
+    usize systemId = IdForType<SystemType>::getId();
 
     // Get the system.
     auto it = m_systems.find(systemId);
@@ -113,7 +114,7 @@ public:
   template <typename SystemType, typename... Args>
   bool update(Args&&... args) {
     // Get the id for the system.
-    size_t systemId = IdForType<SystemType>::getId();
+    usize systemId = IdForType<SystemType>::getId();
 
     // Get the system.
     auto it = m_systems.find(systemId);
@@ -147,7 +148,7 @@ private:
   EventManager* m_eventManager;
 
   // The map of systems with their ids.
-  std::unordered_map<size_t, SystemDetails> m_systems;
+  std::unordered_map<usize, SystemDetails> m_systems;
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(SystemManager);
 };

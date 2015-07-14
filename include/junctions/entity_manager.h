@@ -27,7 +27,7 @@
 
 namespace ju {
 
-using ComponentId = std::size_t;
+using ComponentId = usize;
 
 namespace detail {
 
@@ -48,7 +48,7 @@ class EventManager;
 
 class EntityManager {
 public:
-  static const size_t kMaxComponents = 16;
+  static const usize kMaxComponents = 16;
 
   using ComponentMask = std::bitset<kMaxComponents>;
 
@@ -57,7 +57,7 @@ public:
   class Iterator : public std::iterator<std::input_iterator_tag, Entity> {
   public:
     // Construct an Iterator with the specified manager and index.
-    Iterator(EntityManager* manager, size_t index,
+    Iterator(EntityManager* manager, usize index,
              const ComponentMask& mask)
       : m_manager(manager), m_index(index),
         m_maxSize(m_manager->m_entities.size()), m_mask(mask) {
@@ -105,10 +105,10 @@ public:
     EntityManager* m_manager;
 
     // The current index into the list of entiries.
-    size_t m_index;
+    usize m_index;
 
     // The total capacity of the list we are iterating over.
-    size_t m_maxSize;
+    usize m_maxSize;
 
     // The mask we are filtering on.
     Entity::ComponentMask m_mask;
@@ -118,7 +118,7 @@ public:
 #if 0
   class EntitiesView {
   public:
-    EntitiesView(EntityManager* entityManager, size_t count,
+    EntitiesView(EntityManager* entityManager, usize count,
                  const Entity::ComponentMask& mask);
     ~EntitiesView() = default;
 
@@ -130,7 +130,7 @@ public:
     EntityManager* m_entityManager;
 
     // The maximum number of components in the list.
-    size_t m_count;
+    usize m_count;
 
     // The mask we are filtering entities on.
     Entity::ComponentMask m_mask;
@@ -242,7 +242,7 @@ private:
   friend class Iterator;
 
   // Ensure that we have room for the the given amount of entities.
-  void ensureEntityCount(size_t count);
+  void ensureEntityCount(usize count);
 
   // Get or create the component pool for the specified component type.
   template <typename ComponentType>
@@ -276,7 +276,7 @@ private:
   std::vector<detail::PoolBase*> m_componentPools;
 
   // The index of the next entity we can create.
-  size_t m_nextEntityIndex{0};
+  usize m_nextEntityIndex{0};
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(EntityManager);
 };

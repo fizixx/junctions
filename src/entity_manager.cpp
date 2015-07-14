@@ -16,16 +16,9 @@
 
 namespace ju {
 
-#if 0
-EntityManager::EntitiesView::EntitiesView(EntityManager* entityManager,
-                                          size_t count,
-                                          const ComponentMask& mask)
-  : m_entityManager(entityManager), m_count(count), m_mask(mask) {}
-#endif  // 0
-
 Entity EntityManager::createEntity() {
   // Get the next id we can allocate to an entity.
-  size_t nextId = m_nextEntityIndex++;
+  usize nextId = m_nextEntityIndex++;
 
   // Make sure we have space for the new entity.
   ensureEntityCount(nextId + 1);
@@ -34,7 +27,7 @@ Entity EntityManager::createEntity() {
   return Entity{this, nextId};
 }
 
-void EntityManager::ensureEntityCount(size_t count) {
+void EntityManager::ensureEntityCount(usize count) {
   m_componentMasks.resize(count);
   for (auto& pool : m_componentPools) {
     if (pool) {

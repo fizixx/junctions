@@ -20,6 +20,7 @@
 
 #include "nucleus/logging.h"
 #include "nucleus/macros.h"
+#include "nucleus/types.h"
 
 namespace ju {
 
@@ -31,7 +32,7 @@ namespace detail {
 // contiguous per chunk, which makes it cache friendly.
 class PoolBase {
 public:
-  PoolBase(size_t elementSize, size_t elementsPerChunk)
+  PoolBase(usize elementSize, usize elementsPerChunk)
     : m_elementSize(elementSize), m_elementsPerChunk(elementsPerChunk) {}
 
   virtual ~PoolBase() {
@@ -43,7 +44,7 @@ public:
 
   // Make sure we can hold at least the specified amount of elements in the
   // pool.
-  inline void ensureSize(size_t size) {
+  inline void ensureSize(usize size) {
     if (size > m_size) {
       if (size > m_capacity) {
         reserve(size);
@@ -53,7 +54,7 @@ public:
   }
 
   // Reserve the specified amount of space.
-  inline void reserve(size_t size) {
+  inline void reserve(usize size) {
     while (m_capacity < size) {
       m_chunks.emplace_back(new uint8_t[m_elementSize * m_elementsPerChunk]);
       m_capacity += m_elementsPerChunk;
@@ -62,42 +63,42 @@ public:
 
 protected:
   // Get a pointer to the element with the specified index.
-  inline void* getInternal(size_t index) {
+  inline void* getInternal(usize index) {
     DCHECK(index < m_size);
     return m_chunks[index / m_elementsPerChunk] +
            (index % m_elementsPerChunk) * m_elementSize;
   }
 
-  inline const void* getInternal(size_t index) const {
+  inline const void* getInternal(usize index) const {
     DCHECK(index < m_size);
     return m_chunks[index / m_elementsPerChunk] +
            (index % m_elementsPerChunk) * m_elementSize;
   }
 
   // We need a special destroy, so that we can call destructors if needed.
-  virtual void destroy(size_t index) = 0;
+  virtual void destroy(usize index) = 0;
 
   // A vector to hold a list of all our chunks.
   std::vector<uint8_t*> m_chunks;
 
   // The size of each element we allocate.
-  size_t m_elementSize;
+  usize m_elementSize;
 
   // The amount of elements we hold per chunk.
-  size_t m_elementsPerChunk;
+  usize m_elementsPerChunk;
 
   // The number of elements we currently have.
-  size_t m_size{0};
+  usize m_size{0};
 
   // The total capacity of elements we can hold.
-  size_t m_capacity{0};
+  usize m_capacity{0};
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(PoolBase);
 };
 
 }  // namespace detail
 
-template <typename T, size_t ElementsPerChunk = 64>
+template <typename T, usize ElementsPerChunk = 64>
 class Pool : public detail::PoolBase {
 public:
   Pool() : PoolBase(sizeof(T), ElementsPerChunk) {}
@@ -107,7 +108,7 @@ public:
   // Create a new entity in place at the given index and return the pointer to
   // the newly created element.
   template <typename... Args>
-  T* create(size_t index, Args&&... args) {
+  T* create(usize index, Args&&... args) {
     // Get a pointer to where we should create the new element.
     T* ptr = get(index);
 
@@ -119,14 +120,14 @@ public:
   }
 
   // Return the item at the specified index.
-  T* get(size_t index) { return static_cast<T*>(getInternal(index)); }
+  T* get(usize index) { return static_cast<T*>(getInternal(index)); }
 
   // Return the item at the specified index.
-  const T* get(size_t index) const {
+  const T* get(usize index) const {
     return static_cast<const T*>(getInternal(index));
   }
 
-  void destroy(size_t index) override {
+  void destroy(usize index) override {
     DCHECK(index < m_size);
     T* ptr = static_cast<T*>(get(index));
     ptr->~T();

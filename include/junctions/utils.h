@@ -15,15 +15,17 @@
 #ifndef JUNCTIONS_UTILS_H_
 #define JUNCTIONS_UTILS_H_
 
+#include "nucleus/types.h"
+
 namespace ju {
 
 template <typename T>
 // T: The type that we want an ID for.
 struct IdForType {
-  static size_t getId() {
-    static_assert(sizeof(&getId) == sizeof(size_t),
-                  "size_t must be the same size as a pointer");
-    return reinterpret_cast<size_t>(&getId);
+  static usize getId() {
+    static_assert(sizeof(&getId) == sizeof(usize),
+                  "usize must be the same size as a pointer");
+    return reinterpret_cast<usize>(&getId);
   }
 };
 

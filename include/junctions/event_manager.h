@@ -100,7 +100,7 @@ private:
   template <typename EventType>
   // EventType: The type of the event we want the signal for.
   SignalType* getSignalFor() {
-    size_t eventId = IdForType<EventType>::getId();
+    usize eventId = IdForType<EventType>::getId();
 
     // Find the signal in the map.
     auto it = m_signals.find(eventId);
@@ -116,7 +116,7 @@ private:
     return it->second.get();
   }
 
-  std::unordered_map<size_t, std::unique_ptr<SignalType>> m_signals;
+  std::unordered_map<usize, std::unique_ptr<SignalType>> m_signals;
 
   DISALLOW_COPY_AND_ASSIGN(EventManager);
 };
