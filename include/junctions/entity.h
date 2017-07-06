@@ -19,8 +19,8 @@
 #include <bitset>
 #include <memory>
 
-#include <nucleus/macros.h>
-#include <nucleus/logging.h>
+#include "nucleus/macros.h"
+#include "nucleus/logging.h"
 
 #include "junctions/utils.h"
 

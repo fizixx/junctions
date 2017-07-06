@@ -29,49 +29,47 @@ class EventManager;
 
 namespace detail {
 
-template <typename SystemType>
-struct SystemDeleter {
-  static void deleteSystem(void* system) {
-    delete static_cast<SystemType*>(system);
+template <typename SystemType> struct SystemDeleter {
+  static void deleteSystem(void *system) {
+    delete static_cast<SystemType *>(system);
   }
 };
 
-template <typename SystemType>
-struct HasConfigureFunction {
+template <typename SystemType> struct HasConfigureFunction {
   template <typename C>
-  static std::true_type check(C*, decltype(SystemType::configure)* = 0);
+  static std::true_type check(C *, decltype(C::configure) * = 0);
   static std::false_type check(...);
 
-  enum { value = decltype(check(static_cast<SystemType*>(0)))::value };
+  enum { value = decltype(check(static_cast<SystemType *>(0)))::value };
 };
 
 template <typename SystemType>
 void callConfigure(
     typename std::enable_if<!HasConfigureFunction<SystemType>::value,
-                            SystemType>::type* system,
-    EventManager* eventManager) {
+                            SystemType>::type *system,
+    EventManager *eventManager) {
   LOG(Warning) << "System not configurable!";
 }
 
 template <typename SystemType>
 void callConfigure(
     typename std::enable_if<HasConfigureFunction<SystemType>::value,
-                            SystemType>::type* system,
-    EventManager* eventManager) {
+                            SystemType>::type *system,
+    EventManager *eventManager) {
   DCHECK(eventManager);
   system->configure(*eventManager);
 }
 
-}  // namespace detail
+} // namespace detail
 
 class SystemManager {
 public:
-  SystemManager(EntityManager* entityManager, EventManager* eventManager);
+  SystemManager(EntityManager *entityManager, EventManager *eventManager);
   ~SystemManager();
 
   // Add a system to the system manager.
   template <typename SystemType, typename... Args>
-  void addSystem(Args&&... args) {
+  void addSystem(Args &&... args) {
     // Get the id of the system.
     size_t systemId = IdForType<SystemType>::getId();
 
@@ -79,7 +77,7 @@ public:
     DCHECK(m_systems.find(systemId) == std::end(m_systems));
 
     // Create the new system.
-    SystemType* system = new SystemType{std::forward<Args>(args)...};
+    SystemType *system = new SystemType{std::forward<Args>(args)...};
 
     // Configure the new system.
     detail::callConfigure<SystemType>(system, m_eventManager);
@@ -94,8 +92,7 @@ public:
 
   // Get the instance of the system from the manager.  Returns null if the
   // system doesn't exist in the manager.
-  template <typename SystemType>
-  SystemType* getSystem() {
+  template <typename SystemType> SystemType *getSystem() {
     // Get the id for the system.
     size_t systemId = IdForType<SystemType>::getId();
 
@@ -105,14 +102,14 @@ public:
       return nullptr;
     }
 
-    return static_cast<SystemType*>(it->second.system);
+    return static_cast<SystemType *>(it->second.system);
   }
 
   // Update the specified system with the specified adjustment.  Returns true if
   // the system was updated successfully.  Returns false if the system doesn't
   // exist in this manager.
   template <typename SystemType, typename... Args>
-  bool update(Args&&... args) {
+  bool update(Args &&... args) {
     // Get the id for the system.
     size_t systemId = IdForType<SystemType>::getId();
 
@@ -124,7 +121,7 @@ public:
     }
 
     // Get the system from the SystemDetails.
-    SystemType* system = static_cast<SystemType*>(it->second.system);
+    SystemType *system = static_cast<SystemType *>(it->second.system);
 
     // Update the system.
     system->update(*m_entityManager, *m_eventManager,
@@ -137,15 +134,15 @@ public:
 private:
   // The details of the system we're storing.
   struct SystemDetails {
-    void* system;
-    void (*deleter)(void*);
+    void *system;
+    void (*deleter)(void *);
   };
 
   // The entity manager we pass to all the systems.
-  EntityManager* m_entityManager;
+  EntityManager *m_entityManager;
 
   // The event manager we use to send events.
-  EventManager* m_eventManager;
+  EventManager *m_eventManager;
 
   // The map of systems with their ids.
   std::unordered_map<size_t, SystemDetails> m_systems;
@@ -153,6 +150,6 @@ private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(SystemManager);
 };
 
-}  // namespace ju
+} // namespace ju
 
-#endif  // JUNCTIONS_SYSTEM_MANAGER_H_
+#endif // JUNCTIONS_SYSTEM_MANAGER_H_

@@ -16,19 +16,15 @@
 
 #include "junctions/event_manager.h"
 #include "junctions/system_manager.h"
-#include <nucleus/logging.h>
 
 namespace ju {
 
-struct BlankSystem {
-};
+struct BlankSystem {};
 
 struct ConfigureSystem {
   bool configureCalled{false};
 
-  void configure(EventManager& eventManager) {
-    configureCalled = true;
-  }
+  void configure(EventManager &eventManager) { configureCalled = true; }
 };
 
 TEST(SystemManagerTest, blah) {
@@ -45,4 +41,4 @@ TEST(SystemManagerTest, AddSystem) {
   EXPECT_TRUE(sm.getSystem<ConfigureSystem>()->configureCalled);
 }
 
-}  // namespace ju
+} // namespace ju
