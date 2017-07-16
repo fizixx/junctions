@@ -16,12 +16,8 @@
 
 namespace ju {
 
-SystemManager::SystemManager(EntityManager* entityManager,
-                             EventManager* eventManager)
-  : m_entityManager(entityManager), m_eventManager(eventManager) {
-}
+SystemManager::SystemManager(EntityManager* entityManager) : m_entityManager(entityManager) {}
 
-SystemManager::~SystemManager() {
-}
+SystemManager::~SystemManager() {}
 
 }  // namespace ju

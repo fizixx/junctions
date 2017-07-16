@@ -17,10 +17,14 @@
 
 #include <array>
 #include <bitset>
+#include <limits>
 #include <memory>
+#include <vector>
 
-#include "nucleus/macros.h"
+#include "nucleus/Memory/ScopedPtr.h"
 #include "nucleus/logging.h"
+#include "nucleus/macros.h"
+#include "nucleus/utils/Move.h"
 
 #include "junctions/utils.h"
 
@@ -31,77 +35,145 @@ using ComponentId = std::size_t;
 namespace detail {
 
 inline ComponentId getUniqueComponentId() {
-  static ComponentId nextId = 0;
-  return nextId++;
+    static ComponentId nextId = 0;
+    return nextId++;
 }
 
 template <typename ComponentType>
 inline ComponentId getComponentId() {
-  static ComponentId componentId = getUniqueComponentId();
-  return componentId;
+    static ComponentId componentId = getUniqueComponentId();
+    return componentId;
 }
+
+struct ComponentWrapperBase {
+    virtual ~ComponentWrapperBase() {}
+};
+
+template <typename ComponentType>
+struct ComponentWrapper : public ComponentWrapperBase {
+    nu::ScopedPtr<ComponentType> component;
+
+    ComponentWrapper(nu::ScopedPtr<ComponentType> component) : component(std::move(component)) {}
+    virtual ~ComponentWrapper() {}
+};
 
 }  // namespace detail
 
+class Entity;
+class EntityManager;
+
+using EntityId = std::vector<Entity>::size_type;
+
+static constexpr EntityId kInvalidEntityId = std::numeric_limits<EntityId>::max();
+
 class Entity {
 public:
-  static const size_t kMaxComponents = 16;
+    static constexpr size_t kMaxComponents = 16;
 
-  using ComponentMask = std::bitset<kMaxComponents>;
+    using ComponentMask = std::bitset<kMaxComponents>;
 
-  Entity();
-  Entity(Entity&& other);
+    explicit Entity(EntityId entityId);
+    Entity(Entity&& other);
 
-  // Returns true if this entity has the specified component.
-  template <typename ComponentType>
-  bool hasComponent() {
-    // Get the ID of the component.
-    ComponentId componentId = detail::getComponentId<ComponentType>();
+    // Returns this entity's ID.
+    ComponentId getId() const { return m_id; }
 
-    // Return whether the mask has that bit set or not.
-    return m_mask.test(componentId);
-  }
+    // Remove the entity.
+    void remove();
 
-  // Returns the component mask for this entity.
-  const ComponentMask& getMask() const { return m_mask; }
+    // Returns true if this entity has the specified component.
+    template <typename... ComponentTypes>
+    bool hasComponents() {
+        ComponentMask mask = createMask<ComponentTypes...>();
 
-  // Returns true if our component mask contains those given.
-  bool hasComponents(const ComponentMask& mask) {
-    return (m_mask & mask) == mask;
-  }
+        // Return whether the mask has the bits set or not.
+        return (m_mask & mask) == mask;
+    }
 
-  // Add a component to this entity.
-  template <typename ComponentType, typename... Args>
-  void addComponent(Args&&... args) {
-    // Get the ID for the component.
-    ComponentId componentId = detail::getComponentId<ComponentType>();
+    // Returns true if our component mask contains those given.
+    bool hasComponents(const ComponentMask& mask) { return (m_mask & mask) == mask; }
 
-    // Add the new component to our list of components.
-    m_components[componentId] = new ComponentType(std::forward<Args>(args)...);
+    // Returns the component mask for this entity.
+    const ComponentMask& getMask() const { return m_mask; }
 
-    // Set the component in our mask.
-    m_mask.set(componentId);
-  }
+    // Add a component to this entity and return the newly created component.
+    template <typename ComponentType, typename... Args>
+    ComponentType* addComponent(Args&&... args) {
+        using WrapperType = detail::ComponentWrapper<ComponentType>;
 
-  // Get the specified component from this entity.  Returns null if this entity
-  // doesn't have the specified type of component.
-  template <typename ComponentType>
-  ComponentType* getComponent() {
-    // Get the ID for the component.
-    ComponentId componentId = detail::getComponentId<ComponentType>();
+        // Get the ID for the component.
+        ComponentId componentId = detail::getComponentId<ComponentType>();
 
-    // Find the component and return it if we have it.
-    return static_cast<ComponentType*>(m_components[componentId]);
-  }
+        ComponentType* component = new ComponentType(nu::forward<Args>(args)...);
+
+        // Add the new component to our list of components.
+        m_components[componentId].reset(new WrapperType{component});
+
+        // Set the component in our mask.
+        m_mask.set(componentId);
+
+        // Return the new component.
+        return component;
+    }
+
+    // Get the specified component from this entity.  Returns null if this entity
+    // doesn't have the specified type of component.
+    template <typename ComponentType>
+    ComponentType* getComponent() const {
+        using WrapperType = detail::ComponentWrapper<ComponentType>;
+
+        // Get the ID for the component.
+        ComponentId componentId = detail::getComponentId<ComponentType>();
+
+        // Get the wrapper.
+        const auto& wrapper = m_components.at(componentId);
+        if (!wrapper) {
+            return nullptr;
+        }
+
+        // Return the correct type from the wrapper.
+        return static_cast<WrapperType*>(wrapper.get())->component.get();
+    }
+
+    bool operator==(const Entity& right) const { return m_id == right.m_id; }
+
+    bool operator==(EntityId otherId) const { return m_id == otherId; }
+
+    bool operator!=(const Entity& right) const { return !operator==(right); }
+
+    bool operator!=(EntityId otherId) const { return !operator==(otherId); }
 
 private:
-  // We build up a mask with each bit representing a component that we have.
-  ComponentMask m_mask;
+    friend class EntityManager;
 
-  // Map component type id's to component instances.
-  std::array<void*, kMaxComponents> m_components;
+    template <typename ComponentType>
+    static Entity::ComponentMask createMask() {
+        Entity::ComponentMask mask;
+        mask.set(detail::getComponentId<ComponentType>());
+        return mask;
+    }
 
-  DISALLOW_COPY_AND_ASSIGN(Entity);
+    template <typename C1, typename C2, typename... ComponentTypes>
+    static Entity::ComponentMask createMask() {
+        return createMask<C1>() | createMask<C2, ComponentTypes...>();
+    }
+
+    // Reset the entity to a blank state.
+    void resetInternal();
+
+    // The ID of the component.  This is unique per entity manager and won't change after the entity was created.
+    EntityId m_id;
+
+    // We build up a mask with each bit representing a component that we have.
+    ComponentMask m_mask;
+
+    // Map component type id's to component instances.
+    std::array<nu::ScopedPtr<detail::ComponentWrapperBase>, kMaxComponents> m_components;
+
+    // Set to true if the entity should be removed on next update.
+    bool m_remove{false};
+
+    DISALLOW_COPY_AND_ASSIGN(Entity);
 };
 
 }  // namespace ju

@@ -19,7 +19,6 @@ endif ()
 set("junctions_INCLUDE_FILES"
         "include/junctions/entity.h"
         "include/junctions/entity_manager.h"
-        "include/junctions/event_manager.h"
         "include/junctions/system_manager.h"
         "include/junctions/utils.h"
         )
@@ -27,7 +26,6 @@ set("junctions_INCLUDE_FILES"
 set("junctions_SOURCE_FILES"
         "src/entity.cpp"
         "src/entity_manager.cpp"
-        "src/event_manager.cpp"
         "src/system_manager.cpp"
         )
 
