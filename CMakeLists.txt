@@ -38,12 +38,11 @@ set_property(TARGET "junctions" PROPERTY FOLDER "junctions")
 
 set("junctions_TEST_FILES"
         "tests/entity_manager_tests.cpp"
-        "tests/event_manager_tests.cpp"
         "tests/system_manager_tests.cpp"
         )
 
 add_executable("junctions_tests" ${junctions_TEST_FILES})
-target_link_libraries("junctions_tests" "gtest" "gtest_main" "junctions")
+target_link_libraries("junctions_tests" "googletest" "junctions")
 set_property(TARGET "junctions_tests" PROPERTY FOLDER "junctions")
 
 add_subdirectory("example")

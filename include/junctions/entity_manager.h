@@ -5,9 +5,9 @@
 #include <iterator>
 #include <set>
 #include <unordered_map>
-#include <vector>
 
 #include "junctions/entity.h"
+#include "nucleus/Containers/DynamicArray.h"
 #include "nucleus/logging.h"
 #include "nucleus/macros.h"
 #include "nucleus/utils/signals.h"
@@ -41,12 +41,13 @@ public:
   public:
     // Construct an Iterator with the specified manager and index.
     Iterator(EntityManager* manager, size_t index, const Entity::ComponentMask& mask)
-      : m_manager(manager), m_index(index), m_maxSize(m_manager->m_entities.size()), m_mask(mask) {
+      : m_manager(manager), m_index(index), m_maxSize(m_manager->m_entities.getSize()), m_mask(mask) {
       next();
     }
 
     // Construct an end Iterator.
-    Iterator(EntityManager* manager) : m_manager(manager), m_index(m_manager->m_entities.size()), m_maxSize(m_index) {}
+    Iterator(EntityManager* manager)
+      : m_manager(manager), m_index(m_manager->m_entities.getSize()), m_maxSize(m_index) {}
 
     Iterator& operator++() {
       ++m_index;
@@ -62,14 +63,14 @@ public:
       DCHECK(m_manager == other.m_manager) << "Can't compare iterators from different managers.";
       return m_index != other.m_index;
     }
-    Entity& operator*() { return *m_manager->m_entities[m_index]; }
-    const Entity& operator*() const { return *m_manager->m_entities[m_index]; }
+    Entity& operator*() { return *m_manager->m_entities.get(m_index); }
+    const Entity& operator*() const { return *m_manager->m_entities.get(m_index); }
 
   private:
     // Move the index to the next entity that matches our mask.
     void next() {
       while (m_index != m_maxSize) {
-        auto& entity = m_manager->m_entities.at(m_index);
+        auto& entity = m_manager->m_entities.get(m_index);
         if (entity && entity->hasComponents(m_mask)) {
           break;
         }
@@ -122,12 +123,12 @@ public:
   template <typename ComponentType>
   ComponentType* getComponent(EntityId id) const {
 #if BUILD(DEBUG)
-    if (id < 0 || id >= m_entities.size()) {
+    if (id < 0 || id >= m_entities.getSize()) {
       return nullptr;
     }
 #endif  // BUILD(DEBUG)
 
-    const Entity& entity = *m_entities.at(id);
+    const Entity& entity = *m_entities.get(id);
     return entity.getComponent<ComponentType>();
   }
 
@@ -135,7 +136,7 @@ public:
   template <typename... ComponentTypes>
   EntitiesView allEntitiesWithComponent() {
     Entity::ComponentMask mask = Entity::createMask<ComponentTypes...>();
-    return EntitiesView{this, m_entities.size(), mask};
+    return EntitiesView{this, m_entities.getSize(), mask};
   }
 
   void update();
@@ -211,7 +212,8 @@ private:
   }
 
   // All the entities that we own.
-  std::vector<nu::ScopedPtr<Entity>> m_entities;
+  using EntitiesType = nu::DynamicArray<nu::ScopedPtr<Entity>>;
+  EntitiesType m_entities;
 
   // Signals that we use to emit events.
   std::unordered_map<size_t, std::unique_ptr<SignalType>> m_signals;

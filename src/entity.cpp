@@ -1,6 +1,8 @@
 
 #include "junctions/entity.h"
 
+#include "nucleus/MemoryDebug.h"
+
 namespace ju {
 
 Entity::Entity(EntityId entityId) : m_id(entityId) {}

@@ -6,8 +6,8 @@
 #include <bitset>
 #include <limits>
 #include <memory>
-#include <vector>
 
+#include "nucleus/Containers/DynamicArray.h"
 #include "nucleus/Memory/ScopedPtr.h"
 #include "nucleus/logging.h"
 #include "nucleus/macros.h"
@@ -49,7 +49,7 @@ struct ComponentWrapper : public ComponentWrapperBase {
 class Entity;
 class EntityManager;
 
-using EntityId = std::vector<Entity>::size_type;
+using EntityId = nu::DynamicArray<Entity>::SizeType;
 
 static constexpr EntityId kInvalidEntityId = std::numeric_limits<EntityId>::max();
 
