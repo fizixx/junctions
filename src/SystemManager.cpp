@@ -1,5 +1,5 @@
 
-#include "junctions/system_manager.h"
+#include "junctions/SystemManager.h"
 
 #include "nucleus/MemoryDebug.h"
 

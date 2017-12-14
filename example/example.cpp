@@ -14,9 +14,8 @@
 
 #include <random>
 
-#include "junctions/entity_manager.h"
-#include "junctions/event_manager.h"
-#include "junctions/system_manager.h"
+#include "junctions/EntityManager.h"
+#include "junctions/SystemManager.h"
 #include "SFML/Graphics/CircleShape.hpp"
 #include "SFML/Graphics/RenderWindow.hpp"
 #include "SFML/Graphics/Shape.hpp"

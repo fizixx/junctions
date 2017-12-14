@@ -4,10 +4,9 @@
 
 #include <unordered_map>
 
-#include "nucleus/logging.h"
-#include "nucleus/macros.h"
-
-#include "junctions/utils.h"
+#include "junctions/Utils.h"
+#include "nucleus/Logging.h"
+#include "nucleus/Macros.h"
 
 namespace ju {
 
@@ -23,7 +22,7 @@ struct SystemDeleter {
 template <typename SystemType>
 struct HasConfigureFunction {
   template <typename C>
-  static std::true_type check(C*, decltype(&C::configure) * = 0);
+  static std::true_type check(C*, decltype(&C::configure)* = 0);
   static std::false_type check(...);
 
   enum { value = decltype(check(static_cast<SystemType*>(0)))::value };

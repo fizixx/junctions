@@ -1,7 +1,5 @@
 
-#include "junctions/entity_manager.h"
-
-#include "nucleus/Memory/ScopedPtr.h"
+#include "junctions/EntityManager.h"
 
 #include "nucleus/MemoryDebug.h"
 
@@ -12,7 +10,7 @@ EntityManager::EntitiesView::EntitiesView(EntityManager* entityManager, size_t c
 
 EntityId EntityManager::createEntity() {
   auto nextEntityId = m_entities.getSize();
-  m_entities.emplaceBack(nu::MakeScopedPtr<Entity>(nextEntityId));
+  m_entities.emplaceBack(new Entity{nextEntityId});
   return nextEntityId;
 }
 

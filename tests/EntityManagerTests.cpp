@@ -1,8 +1,8 @@
 
 #include "gtest/gtest.h"
 
-#include "junctions/entity_manager.h"
-#include "junctions/system_manager.h"
+#include "junctions/EntityManager.h"
+#include "junctions/SystemManager.h"
 
 namespace ju {
 

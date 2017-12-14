@@ -6,11 +6,11 @@
 #include <set>
 #include <unordered_map>
 
-#include "junctions/entity.h"
+#include "junctions/Entity.h"
 #include "nucleus/Containers/DynamicArray.h"
-#include "nucleus/logging.h"
-#include "nucleus/macros.h"
-#include "nucleus/utils/signals.h"
+#include "nucleus/Logging.h"
+#include "nucleus/Macros.h"
+#include "nucleus/Utils/Signals.h"
 
 namespace ju {
 

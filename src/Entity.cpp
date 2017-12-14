@@ -1,5 +1,5 @@
 
-#include "junctions/entity.h"
+#include "junctions/Entity.h"
 
 #include "nucleus/MemoryDebug.h"
 

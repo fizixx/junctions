@@ -7,13 +7,12 @@
 #include <limits>
 #include <memory>
 
+#include "junctions/Utils.h"
 #include "nucleus/Containers/DynamicArray.h"
+#include "nucleus/Logging.h"
+#include "nucleus/Macros.h"
 #include "nucleus/Memory/ScopedPtr.h"
-#include "nucleus/logging.h"
-#include "nucleus/macros.h"
-#include "nucleus/utils/Move.h"
-
-#include "junctions/utils.h"
+#include "nucleus/Utils/Move.h"
 
 namespace ju {
 

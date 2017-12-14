@@ -1,7 +1,7 @@
 
 #include <gtest/gtest.h>
 
-#include "junctions/system_manager.h"
+#include "junctions/SystemManager.h"
 
 namespace ju {
 
