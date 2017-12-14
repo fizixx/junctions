@@ -123,7 +123,7 @@ public:
   template <typename ComponentType>
   ComponentType* getComponent(EntityId id) const {
 #if BUILD(DEBUG)
-    if (id < 0 || id >= m_entities.getSize()) {
+    if (id >= m_entities.getSize()) {
       return nullptr;
     }
 #endif  // BUILD(DEBUG)
