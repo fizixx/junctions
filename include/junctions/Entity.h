@@ -8,15 +8,17 @@
 #include <memory>
 
 #include "junctions/Utils.h"
+#include "nucleus/Containers/BitSet.h"
 #include "nucleus/Containers/DynamicArray.h"
 #include "nucleus/Logging.h"
 #include "nucleus/Macros.h"
 #include "nucleus/Memory/ScopedPtr.h"
+#include "nucleus/Types.h"
 #include "nucleus/Utils/Move.h"
 
 namespace ju {
 
-using ComponentId = std::size_t;
+using ComponentId = USize;
 
 namespace detail {
 
@@ -39,7 +41,7 @@ template <typename ComponentType>
 struct ComponentWrapper : public ComponentWrapperBase {
   nu::ScopedPtr<ComponentType> component;
 
-  ComponentWrapper(nu::ScopedPtr<ComponentType> component) : component(std::move(component)) {}
+  ComponentWrapper(nu::ScopedPtr<ComponentType> component) : component(move(component)) {}
   virtual ~ComponentWrapper() {}
 };
 
@@ -54,18 +56,29 @@ static constexpr EntityId kInvalidEntityId = std::numeric_limits<EntityId>::max(
 
 class Entity {
 public:
-  static constexpr size_t kMaxComponents = 16;
+  static constexpr USize kMaxComponents = 16;
 
-  using ComponentMask = std::bitset<kMaxComponents>;
+  // using ComponentMask = std::bitset<kMaxComponents>;
+  using ComponentMask = nu::BitSet<kMaxComponents>;
 
-  explicit Entity(EntityId entityId);
-  Entity(Entity&& other);
+  explicit Entity(EntityId entityId) : m_id(entityId), m_remove(false) {}
+
+  Entity(Entity&& other) {
+    using std::swap;
+    swap(m_id, other.m_id);
+    swap(m_mask, other.m_mask);
+    swap(m_components, other.m_components);
+  }
 
   // Returns this entity's ID.
-  ComponentId getId() const { return m_id; }
+  ComponentId getId() const {
+    return m_id;
+  }
 
-  // Remove the entity.
-  void remove();
+  // Mark this entity for removal.
+  void remove() {
+    m_remove = true;
+  }
 
   // Returns true if this entity has the specified component.
   template <typename... ComponentTypes>
@@ -77,10 +90,14 @@ public:
   }
 
   // Returns true if our component mask contains those given.
-  bool hasComponents(const ComponentMask& mask) { return (m_mask & mask) == mask; }
+  bool hasComponents(const ComponentMask& mask) {
+    return (m_mask & mask) == mask;
+  }
 
   // Returns the component mask for this entity.
-  const ComponentMask& getMask() const { return m_mask; }
+  const ComponentMask& getMask() const {
+    return m_mask;
+  }
 
   // Add a component to this entity and return the newly created component.
   template <typename ComponentType, typename... Args>
@@ -121,13 +138,21 @@ public:
     return static_cast<WrapperType*>(wrapper.get())->component.get();
   }
 
-  bool operator==(const Entity& right) const { return m_id == right.m_id; }
+  bool operator==(const Entity& right) const {
+    return m_id == right.m_id;
+  }
 
-  bool operator==(EntityId otherId) const { return m_id == otherId; }
+  bool operator==(EntityId otherId) const {
+    return m_id == otherId;
+  }
 
-  bool operator!=(const Entity& right) const { return !operator==(right); }
+  bool operator!=(const Entity& right) const {
+    return !operator==(right);
+  }
 
-  bool operator!=(EntityId otherId) const { return !operator==(otherId); }
+  bool operator!=(EntityId otherId) const {
+    return !operator==(otherId);
+  }
 
 private:
   friend class EntityManager;
@@ -157,7 +182,7 @@ private:
   std::array<nu::ScopedPtr<detail::ComponentWrapperBase>, kMaxComponents> m_components;
 
   // Set to true if the entity should be removed on next update.
-  bool m_remove{false};
+  bool m_remove;
 
   DISALLOW_COPY_AND_ASSIGN(Entity);
 };
