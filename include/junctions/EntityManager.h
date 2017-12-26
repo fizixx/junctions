@@ -63,14 +63,14 @@ public:
       DCHECK(m_manager == other.m_manager) << "Can't compare iterators from different managers.";
       return m_index != other.m_index;
     }
-    Entity& operator*() { return *m_manager->m_entities.get(m_index); }
-    const Entity& operator*() const { return *m_manager->m_entities.get(m_index); }
+    Entity& operator*() { return *m_manager->m_entities[m_index]; }
+    const Entity& operator*() const { return *m_manager->m_entities[m_index]; }
 
   private:
     // Move the index to the next entity that matches our mask.
     void next() {
       while (m_index != m_maxSize) {
-        auto& entity = m_manager->m_entities.get(m_index);
+        auto& entity = m_manager->m_entities[m_index];
         if (entity && entity->hasComponents(m_mask)) {
           break;
         }
@@ -128,7 +128,7 @@ public:
     }
 #endif  // BUILD(DEBUG)
 
-    const Entity& entity = *m_entities.get(id);
+    const Entity& entity = *m_entities[id];
     return entity.getComponent<ComponentType>();
   }
 
